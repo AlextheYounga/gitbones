@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+#
+# deploy — Remote hook, called by post-receive.
+#
+# Scans the bones/deployment/ folder and runs each script
+# sequentially in alphabetical order. Scripts must be named
+# with a numerical prefix (e.g., 01_install_deps.sh).
+#
+# GIT_DIR is set by git to the bare repo path.
+
+set -euo pipefail
+
+BONES_TOML="$GIT_DIR/bones/bones.toml"
+DEPLOYMENT_DIR="$GIT_DIR/bones/deployment"
+HOOKS_DIR="$GIT_DIR/hooks"
+
+WORKTREE=$(grep -E '^worktree\s*=' "$BONES_TOML" | head -1 | sed 's/.*=\s*"\(.*\)"/\1/')
+
+if [ -z "$WORKTREE" ]; then
+    echo "[gitbones] Error: Could not read worktree from $BONES_TOML"
+    exit 1
+fi
+
+if [ ! -d "$DEPLOYMENT_DIR" ]; then
+    echo "[gitbones] No deployment directory found. Skipping deploy scripts."
+else
+    cd "$WORKTREE"
+
+    for script in "$DEPLOYMENT_DIR"/*; do
+        [ -f "$script" ] || continue
+
+        echo "[gitbones] Running $(basename "$script")..."
+
+        if ! bash "$script"; then
+            echo "[gitbones] Deployment script $(basename "$script") failed."
+            exit 1
+        fi
+    done
+
+    echo "[gitbones] All deployment scripts completed."
+fi
+
+echo "[gitbones] Running post-deploy..."
+
+exec "$HOOKS_DIR/post-deploy"

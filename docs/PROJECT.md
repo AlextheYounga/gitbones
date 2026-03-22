@@ -159,10 +159,11 @@ gitbones/
   - Runs local checks:
     - `.bones` folder is set up correctly. Deployment scripts are named appropriately.
     - Local `pre-push` hook is symlinked properly.
-  - Runs minor remote checks
+  - Runs remote checks (skipped with `--local`):
     - `gitbones-remote` executable exists on remote and can be run globally.
     - `{project_name}.git/bones` folder exists on remote (needs `gitbones push` warning)
     - `{project_name}.git/bones/hooks` matches with `{project_name}.git/hooks` inside the remote bare repo.
+  - The `--local` flag skips all remote checks. The `pre-push` hook uses this flag since the remote is independently validated by `gitbones-remote doctor` in the `pre-receive` hook.
 
 - **push**
   - Uses an `rsync -av --delete` command to push up our local `.bones` folder to the bare repo.

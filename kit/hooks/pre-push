@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+#
+# pre-push — Local hook, symlinked to .git/hooks/pre-push
+#
+# Checks if we are pushing to the gitbones-managed remote.
+# If so, runs `gitbones doctor` and aborts on any failure.
+#
+# Git passes the remote name and URL as arguments:
+#   $1 = remote name
+#   $2 = remote URL
+
+set -euo pipefail
+
+REMOTE_NAME="$1"
+
+# Read the bones remote name from .bones/bones.toml
+BONES_REMOTE=$(grep -E '^remote_name\s*=' .bones/bones.toml | head -1 | sed 's/.*=\s*"\(.*\)"/\1/')
+
+if [ -z "$BONES_REMOTE" ]; then
+    echo "[gitbones] Warning: Could not read remote_name from .bones/bones.toml"
+    exit 0
+fi
+
+if [ "$REMOTE_NAME" != "$BONES_REMOTE" ]; then
+    exit 0
+fi
+
+echo "[gitbones] Pushing to bones remote '$BONES_REMOTE', running doctor..."
+
+if ! gitbones doctor --local; then
+    echo "[gitbones] Doctor reported issues. Push aborted."
+    exit 1
+fi
+
+echo "[gitbones] Doctor passed."

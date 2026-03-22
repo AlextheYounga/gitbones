@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+#
+# pre-receive — Remote hook, runs before refs are updated.
+#
+# Runs gitbones-remote doctor to validate the server environment,
+# then calls pre-deploy to prepare the worktree for deployment.
+#
+# GIT_DIR is set by git to the bare repo path.
+
+set -euo pipefail
+
+HOOKS_DIR="$GIT_DIR/hooks"
+
+echo "[gitbones] Running remote doctor..."
+
+if ! sudo gitbones-remote doctor; then
+    echo "[gitbones] Remote doctor reported issues. Push rejected."
+    exit 1
+fi
+
+echo "[gitbones] Doctor passed. Running pre-deploy..."
+
+exec "$HOOKS_DIR/pre-deploy"
