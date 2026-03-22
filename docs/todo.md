@@ -1,0 +1,2 @@
+- [ ] Set up project structure
+- [ ] Handle `gitbones` commands
