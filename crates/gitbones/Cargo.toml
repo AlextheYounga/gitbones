@@ -1,0 +1,17 @@
+[package]
+name = "gitbones"
+version = "0.1.0"
+edition = "2024"
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+console = "0.15"
+git2 = "0.20"
+inquire = "0.7"
+rust-embed = "8"
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"

@@ -1,22 +1,23 @@
 # GitBones TODO
 
 ## Phase 1: Workspace & Scaffolding
-- [ ] Convert to Cargo workspace with `crates/gitbones` and `crates/gitbones-remote`
-- [ ] Set up clap CLI skeleton for both binaries (subcommands, help text)
-- [ ] Wire up `version` command for both binaries
+- [x] Convert to Cargo workspace with `crates/gitbones` and `crates/gitbones-remote`
+- [x] Set up clap CLI skeleton for both binaries (subcommands, help text)
+- [x] Wire up `version` command for both binaries
 
 ## Phase 2: Config & Embedded Assets
-- [ ] Define `bones.toml` serde structs in `gitbones/src/config.rs`
-- [ ] Implement load/save for local config (`.bones/bones.toml`)
-- [ ] Set up `rust-embed` pointing at `kit/` in `gitbones/src/embedded.rs`
-- [ ] Write scaffold extraction: create `.bones/` directory tree from embedded assets
-- [ ] Write the kit hook scripts (pre-push, pre-receive, pre-deploy, post-receive, deploy, post-deploy)
+- [x] Define `bones.toml` serde structs in `gitbones/src/config.rs`
+- [x] Implement load/save for local config (`.bones/bones.toml`)
+- [x] Set up `rust-embed` pointing at `kit/` in `gitbones/src/embedded.rs`
+- [x] Write scaffold extraction: create `.bones/` directory tree from embedded assets
+- [x] Write the kit hook scripts (pre-push, pre-receive, pre-deploy, post-receive, deploy, post-deploy)
 
 ## Phase 3: gitbones init
 - [ ] Implement `prompts.rs` using inquire (collect all bones.toml fields with defaults)
 - [ ] Implement `git.rs` (read remote URL from git2, validate repo state)
 - [ ] Implement init command orchestration:
-  - [ ] Explain what will happen, confirm with user
+  - [ ] Inform user that a remote git URL must already be set, explain what will happen, confirm with user
+  - [ ] Fail if no git remote URL is set for the configured remote name
   - [ ] Extract scaffold to `.bones/`
   - [ ] Update `.gitignore` to include `.bones`
   - [ ] Load existing config or run prompts for new config
@@ -38,10 +39,11 @@
   - [ ] `.bones/` folder structure is valid
   - [ ] Deployment scripts follow naming convention
   - [ ] `pre-push` hook is symlinked to `.git/hooks/pre-push`
-- [ ] Remote checks (over SSH):
+- [ ] Remote checks (over SSH, skipped with `--local`):
   - [ ] `gitbones-remote` is globally available on remote
   - [ ] `{git_dir}/bones/` exists on remote
   - [ ] `{git_dir}/bones/hooks/` entries match `{git_dir}/hooks/` symlinks
+- [ ] Implement `--local` flag (pre-push hook uses this since remote is validated independently by gitbones-remote doctor)
 
 ## Phase 7: gitbones-remote init
 - [ ] Define `bones.toml` serde structs in `gitbones-remote/src/config.rs`
