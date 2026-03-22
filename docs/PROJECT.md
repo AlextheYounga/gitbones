@@ -102,7 +102,46 @@ Hooks are static shell scripts embedded in the `gitbones` binary. They are writt
 This folder stores deployment scripts to be called by `deploy`. Files in this folder must be ordered sequentially like `01_run_deployment_concerns.sh` and `02_lockup_permissions.sh`. They are named in numerical order and all of these scripts are always run.
 
 ## Crate Structure
-This Cargo workspace will have two bins, one for gitbones and one for gitbones-remote. Shared logic (e.g., config parsing, embedded assets) can be in a common lib crate.
+This Cargo workspace has two crates under `crates/`, each with its own dependencies. There is no shared lib crate; the `bones.toml` structs are duplicated since each binary discovers and uses config differently.
+
+```
+gitbones/
+├── Cargo.toml                  # workspace root
+├── kit/                        # embedded assets (scaffolding templates)
+│   ├── bones.toml
+│   ├── deployment/
+│   └── hooks/
+├── crates/
+│   ├── gitbones/               # local CLI binary
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       ├── main.rs         # clap setup, command dispatch
+│   │       ├── commands/
+│   │       │   ├── mod.rs
+│   │       │   ├── init.rs
+│   │       │   ├── doctor.rs
+│   │       │   ├── push.rs
+│   │       │   └── version.rs
+│   │       ├── config.rs       # bones.toml structs + load/save + local file discovery
+│   │       ├── embedded.rs     # rust-embed from kit/, scaffold writing
+│   │       ├── git.rs          # git2 operations: read remote URLs, repo validation
+│   │       ├── prompts.rs      # interactive user input collection, returns config
+│   │       └── ssh.rs          # openssh session management + rsync
+│   └── gitbones-remote/        # server-side binary
+│       ├── Cargo.toml
+│       └── src/
+│           ├── main.rs
+│           ├── commands/
+│           │   ├── mod.rs
+│           │   ├── init.rs
+│           │   ├── doctor.rs
+│           │   ├── pre_deploy.rs
+│           │   ├── post_deploy.rs
+│           │   └── version.rs
+│           ├── config.rs       # bones.toml structs + remote file discovery
+│           └── permissions.rs  # chown/chmod logic
+└── docs/
+```
 
 ### Gitbones CLI Commands
 - **init**:
@@ -166,8 +205,15 @@ This Cargo workspace will have two bins, one for gitbones and one for gitbones-r
 
 ## Cargo Dependencies
 - clap
-- git2 
+- git2
+- inquire
 - rust-embed
 - toml
 - rsync
 - openssh
+- serde (derive)
+- tokio
+- console
+- nix
+- walkdir
+- anyhow
