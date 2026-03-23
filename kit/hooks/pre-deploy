@@ -10,6 +10,8 @@
 
 set -euo pipefail
 
+GIT_DIR=$(cd "$GIT_DIR" && pwd)
+
 BONES_TOML="$GIT_DIR/bones/bones.toml"
 
 echo "[gitbones] Running pre-deploy (changing worktree ownership to deploy user)..."

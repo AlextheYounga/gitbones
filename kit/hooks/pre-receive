@@ -9,6 +9,8 @@
 
 set -euo pipefail
 
+GIT_DIR=$(cd "$GIT_DIR" && pwd)
+
 HOOKS_DIR="$GIT_DIR/hooks"
 
 echo "[gitbones] Running remote doctor..."
