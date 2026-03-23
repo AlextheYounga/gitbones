@@ -81,6 +81,15 @@ fn default_group() -> String { "www-data".into() }
 fn default_dir_mode() -> String { "750".into() }
 fn default_file_mode() -> String { "640".into() }
 
+pub fn is_configured(config: &BonesConfig) -> bool {
+    let d = &config.data;
+    !d.remote_name.is_empty()
+        && !d.project_name.is_empty()
+        && !d.host.is_empty()
+        && !d.git_dir.is_empty()
+        && !d.worktree.is_empty()
+}
+
 pub fn load(path: &Path) -> Result<BonesConfig> {
     let content = fs::read_to_string(path)
         .with_context(|| format!("Failed to read {}", path.display()))?;

@@ -52,15 +52,8 @@ pub async fn run() -> Result<()> {
     // Update .gitignore
     update_gitignore()?;
 
-    // Load existing config or collect via prompts
     let bones_toml = Path::new(BONES_TOML);
-    let cfg = if bones_toml.exists() {
-        println!("Loading existing config from .bones/bones.toml...");
-        config::load(bones_toml)?
-    } else {
-        let project_name = repo_directory_name()?;
-        prompts::collect(&project_name)?
-    };
+    let cfg = load_or_collect_config(bones_toml)?;
 
     // Validate the remote exists
     git::validate_remote_exists(&repo, &cfg.data.remote_name)?;
@@ -90,6 +83,19 @@ pub async fn run() -> Result<()> {
     );
 
     Ok(())
+}
+
+fn load_or_collect_config(bones_toml: &Path) -> Result<config::BonesConfig> {
+    if bones_toml.exists() {
+        let existing = config::load(bones_toml)?;
+        if config::is_configured(&existing) {
+            println!("Loading existing config from .bones/bones.toml...");
+            return Ok(existing);
+        }
+        println!("Config is incomplete, running prompts...");
+    }
+    let project_name = repo_directory_name()?;
+    prompts::collect(&project_name)
 }
 
 fn update_gitignore() -> Result<()> {
