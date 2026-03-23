@@ -1,10 +1,22 @@
 # GitBones
 
-A Rust CLI for git-based deployments over SSH. GitBones scaffolds hook scripts and deployment configs into your repo, syncs them to a remote bare repository, and manages file ownership and permissions across deploys.
+A drop-in Rust deployment system for git-based deployments over SSH. GitBones scaffolds hook scripts and deployment configs into your repo, syncs them to a remote bare repository, and manages file ownership and permissions across deploys without forcing containers, a control plane, or a platform layer.
 
 It produces two binaries:
 - **`gitbones`** — local CLI for setup and management
 - **`gitbones-remote`** — server-side tool for remote operations, installed on the deployment host
+
+## Why GitBones
+
+GitBones is built for developers who want `git push` deployments without handing deployment over to a PaaS or rebuilding everything around Docker.
+
+- **Drop-in** — add it to an existing repo, scaffold `.bones/`, and deploy over your existing SSH + bare repo workflow
+- **Git-native** — hooks, remotes, and bare repos stay the source of truth instead of hiding deployment behind a daemon
+- **Permission-aware** — GitBones treats deploy-user to service-user handoff as a first-class concern instead of leaving shared groups or ACL sprawl behind
+- **Self-hosted and lightweight** — ideal for VPSes, old servers, and Raspberry Pis where simplicity matters more than orchestration
+- **Editable by design** — the generated hooks and deployment scripts are yours; GitBones gives you structure, not lock-in
+
+If you want a Heroku-style abstraction layer, use a platform. If you want a disciplined, transparent deployment skeleton that drops into a normal Linux box, use GitBones.
 
 ## How It Works
 
@@ -14,6 +26,12 @@ GitBones uses a two-user deployment model:
 2. A **service user** (default: `applications`) owns the deployed files. This user has no home folder, no login, and no sudo ability — limiting attack scope.
 
 During deployment, `gitbones-remote` temporarily changes file ownership to the deploy user so scripts can write, then hardens permissions back to the service user afterward. The sudoers configuration is strictly limited to `gitbones-remote` commands only.
+
+This gives you a clean privilege boundary:
+
+- the **deploy user** can connect and deploy
+- the **service user** ends up owning the app
+- `gitbones-remote` is the only privileged bridge between those two phases
 
 ## Installation
 
@@ -49,7 +67,7 @@ gitbones init
 
 This will:
 1. Create a `.bones/` folder with hooks and deployment script templates
-2. Prompt for project configuration (remote name, host, permissions, etc.)
+2. Prompt for project configuration (remote name, project paths, branch, permissions, etc.)
 3. Add `.bones` to `.gitignore`
 4. Symlink the `pre-push` hook into `.git/hooks/`
 5. Create a bare repo on the remote if needed
@@ -102,8 +120,6 @@ gitbones doctor --local  # check local only
 [data]
 remote_name = "production"
 project_name = "myproject"
-host = "deploy.example.com"
-port = "22"
 git_dir = "/home/git/myproject.git"
 worktree = "/var/www/myproject"
 branch = "master"
@@ -126,6 +142,8 @@ mode = "660"
 type = "file"
 ```
 
+Remote host and port are not stored separately in `bones.toml`. GitBones reads that information from the URL configured with `git remote add`.
+
 ## Project Structure
 
 ```
@@ -143,6 +161,18 @@ type = "file"
 ```
 
 Hooks are written to `.bones/hooks/` once during init. After that they belong to you — edit freely. Deployment scripts in `.bones/deployment/` must be numbered (e.g. `01_install_deps.sh`, `02_build.sh`) and are always run in order.
+
+## Good Fit
+
+GitBones is a strong fit when you want:
+
+- direct Linux deploys over SSH
+- simple app hosting on one machine at a time
+- explicit file ownership and permission hardening
+- a lightweight alternative to container-first deployment stacks
+- something you can run comfortably on low-cost hosts and Raspberry Pis
+
+GitBones can still deploy Docker-based apps if your deployment scripts call `docker compose`, but Docker is optional rather than the foundation.
 
 ## License
 
