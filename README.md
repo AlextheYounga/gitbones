@@ -20,13 +20,13 @@ During deployment, `gitbones-remote` temporarily changes file ownership to the d
 ### Local (gitbones)
 
 ```sh
-cargo install --git https://github.com/alexjgriffith/gitbones.git gitbones
+cargo install --git https://github.com/AlextheYounga/gitbones.git gitbones
 ```
 
 ### Server (gitbones-remote)
 
 ```sh
-cargo install --git https://github.com/alexjgriffith/gitbones.git gitbones-remote
+cargo install --git https://github.com/AlextheYounga/gitbones.git gitbones-remote
 ```
 
 Then run the one-time server setup as root:
