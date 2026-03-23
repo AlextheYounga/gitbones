@@ -1,5 +1,6 @@
 use std::fs;
 use std::path::Path;
+use std::process::Command;
 
 use anyhow::Result;
 use console::style;
@@ -136,6 +137,9 @@ async fn check_remote(cfg: &config::BonesConfig, issues: &mut Vec<String>) {
         ));
     }
 
+    // Check local .bones/ is in sync with remote
+    check_rsync_sync(cfg, issues);
+
     // Check hooks are symlinked properly
     let check_hooks = format!(
         "for hook in {git_dir}/bones/hooks/*; do \
@@ -161,4 +165,62 @@ async fn check_remote(cfg: &config::BonesConfig, issues: &mut Vec<String>) {
     }
 
     let _ = session.close().await;
+}
+
+fn check_rsync_sync(cfg: &config::BonesConfig, issues: &mut Vec<String>) {
+    let user = &cfg.permissions.defaults.deploy;
+    let host = &cfg.data.host;
+    let port = &cfg.data.port;
+    let git_dir = &cfg.data.git_dir;
+    let dest = format!("{user}@{host}:{git_dir}/bones/");
+
+    let output = Command::new("rsync")
+        .args([
+            "-avnc",
+            "--delete",
+            "-e",
+            &format!("ssh -p {port}"),
+            &format!("{BONES_DIR}/"),
+            &dest,
+        ])
+        .output();
+
+    let output = match output {
+        Ok(o) => o,
+        Err(e) => {
+            issues.push(format!("Failed to run rsync sync check: {e}"));
+            return;
+        }
+    };
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        issues.push(format!("rsync sync check failed: {stderr}"));
+        return;
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let changed: Vec<&str> = stdout
+        .lines()
+        .filter(|line| {
+            let line = line.trim();
+            // Skip rsync summary/header lines and directory-only entries
+            !line.is_empty()
+                && !line.starts_with("sending ")
+                && !line.starts_with("sent ")
+                && !line.starts_with("total ")
+                && !line.ends_with('/')
+        })
+        .collect();
+
+    if !changed.is_empty() {
+        issues.push(format!(
+            "Local .bones/ is out of sync with remote (run 'gitbones push'). Changed files:\n{}",
+            changed
+                .iter()
+                .map(|f| format!("      {f}"))
+                .collect::<Vec<_>>()
+                .join("\n")
+        ));
+    }
 }
