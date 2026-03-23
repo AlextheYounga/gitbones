@@ -1,0 +1,26 @@
+[permissions.defaults]
+deploy = "git"
+owner = "applications"
+group = "www-data"
+dir_mode = "750"
+file_mode = "640"
+
+[[permissions.paths]]
+path      = "storage"
+mode      = "770"
+recursive = true  
+
+[[permissions.paths]]  
+path      = "bootstrap/cache"  
+mode      = "770"  
+recursive = true  
+
+[[permissions.paths]]  
+path      = "database"  
+mode      = "770"  
+type      = "dir"  
+
+[[permissions.paths]]  
+path      = "database/database.sqlite"  
+mode      = "660"  
+type      = "file"  

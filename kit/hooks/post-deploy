@@ -9,6 +9,7 @@
 
 set -euo pipefail
 
+GIT_DIR="${GIT_DIR:-.}"
 GIT_DIR=$(cd "$GIT_DIR" && pwd)
 
 BONES_TOML="$GIT_DIR/bones/bones.toml"

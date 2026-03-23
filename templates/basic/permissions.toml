@@ -1,0 +1,6 @@
+[permissions.defaults]
+deploy = "git"
+owner = "applications"
+group = "www-data"
+dir_mode = "750"
+file_mode = "640"
