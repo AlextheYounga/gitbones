@@ -1,5 +1,6 @@
 use anyhow::{Context, Result, bail};
-use openssh::{KnownHosts, Session, SessionBuilder};
+use openssh::{KnownHosts, Session, SessionBuilder, Stdio};
+use tokio::io::{AsyncBufReadExt, BufReader};
 
 use crate::config::BonesConfig;
 
@@ -38,6 +39,51 @@ pub async fn run_cmd(session: &Session, cmd: &str) -> Result<String> {
     }
 
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
+pub async fn stream_cmd(session: &Session, cmd: &str) -> Result<()> {
+    let mut child = session
+        .command("bash")
+        .arg("-c")
+        .arg(cmd)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .await
+        .with_context(|| format!("Failed to execute remote command: {cmd}"))?;
+
+    let stdout = child.stdout().take().expect("stdout was piped");
+    let stderr = child.stderr().take().expect("stderr was piped");
+
+    let stdout_task = tokio::spawn(async move {
+        let reader = BufReader::new(stdout);
+        let mut lines = reader.lines();
+        while let Ok(Some(line)) = lines.next_line().await {
+            println!("{line}");
+        }
+    });
+
+    let stderr_task = tokio::spawn(async move {
+        let reader = BufReader::new(stderr);
+        let mut lines = reader.lines();
+        while let Ok(Some(line)) = lines.next_line().await {
+            eprintln!("{line}");
+        }
+    });
+
+    // Drain both streams concurrently before checking exit status
+    let _ = tokio::join!(stdout_task, stderr_task);
+
+    let status = child
+        .wait()
+        .await
+        .context("Failed to wait for remote command")?;
+
+    if !status.success() {
+        bail!("Remote command failed: {cmd}");
+    }
+
+    Ok(())
 }
 
 pub async fn create_bare_repo(session: &Session, git_dir: &str) -> Result<()> {
