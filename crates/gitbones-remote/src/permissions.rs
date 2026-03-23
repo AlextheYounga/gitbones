@@ -97,6 +97,7 @@ fn run_chown(ownership: &str, path: &str, recursive: bool) -> Result<()> {
     Ok(())
 }
 
+
 fn parse_mode(mode_str: &str) -> Result<u32> {
     u32::from_str_radix(mode_str, 8).with_context(|| format!("Invalid mode: {mode_str}"))
 }
@@ -104,8 +105,8 @@ fn parse_mode(mode_str: &str) -> Result<u32> {
 fn apply_default_modes(worktree: &str, dir_mode: u32, file_mode: u32) -> Result<()> {
     for entry in WalkDir::new(worktree) {
         let entry = entry.with_context(|| format!("Failed to walk {worktree}"))?;
-        let metadata = entry
-            .metadata()
+        // Follow symlinks so a symlink to a directory gets dir_mode, not file_mode
+        let metadata = fs::metadata(entry.path())
             .with_context(|| format!("Failed to read metadata for {}", entry.path().display()))?;
 
         let mode = if metadata.is_dir() {
